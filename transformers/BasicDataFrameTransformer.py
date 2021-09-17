@@ -8,14 +8,14 @@ class BasicDataFrameTransformer(BasicTransformer):
     def transform(self, data):
         # df = self.setColumns(df)
         # df = self.addFantasyColumns(df)
-        return df
+        return data
 
     # def 
 
-    def setColumns(self, df):
-        columns = df.columns
+    def setColumns(self, data):
+        columns = data.columns
 
-        return df
+        return data
 
-    def addFantasyColumns(self, df):
-        return df
+    def addFantasyColumns(self, data):
+        return data

@@ -30,7 +30,7 @@ class FantasyHockeyController:
 
         for fileName in rawDataFiles:
             filePath = self.dataPath + dataType + "/" + fileName
-            data = self.dataModel(filePath, self.excelSheetName)
+            data = self.dataModel(filePath, self.sheetName)
 
             dataList.append(data)
 
@@ -39,6 +39,7 @@ class FantasyHockeyController:
     def consolidateData(self, dataModelList):
 
         consolidatedData = self.dataModel()
+
         for dataModel in dataModelList:
             consolidatedData.append(dataModel)
 
@@ -85,7 +86,6 @@ class FantasyHockeyController:
 
         isValid = self.validateProcess()
         if not isValid[0]:
-            print(isValid[1])
             return
         else:
             for dataType in self.dataTypes:

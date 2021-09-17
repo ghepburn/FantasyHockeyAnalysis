@@ -19,9 +19,10 @@ class DfModel(DataModel):
 
         pathList = path.split("/")
         fileName = pathList[-1]
-        if fileName[-1] == "csv":
+        fileNameList = fileName.split(".")
+        if fileNameList[-1] == "csv":
             df = pd.read_csv(path, self.sheetName, index_col=0)
-        elif fileName[-1] == "xlsx":
+        elif fileNameList[-1] == "xlsx":
             df = pd.read_excel(path, self.sheetName, index_col=0)
         else:
             df = pd.DataFrame()
@@ -66,3 +67,7 @@ class DfModel(DataModel):
 
     def transformToCsv(self):
         return self.data.to_csv()
+
+    def append(self, df):
+        self.data = self.data.append(df.data)
+        return self.data
