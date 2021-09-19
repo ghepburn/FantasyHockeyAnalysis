@@ -5,12 +5,14 @@ import datetime as dt
 from transformers.BasicDataFrameTransformer import BasicDataFrameTransformer
 from models.DfModel import DfModel
 from maps.QuantHockeyMap import QuantHockeyMap
+from models.Season import Season
 
 class FantasyHockeyController:
     season = str(dt.datetime.now().year - 1) + str(dt.datetime.now().year)
     dataTypes = ["players", "goalies"]
     dataSource = "QuantHockey"
     sheetName = "QuantHockey"
+    numOfSeasons = 3
     transformer = BasicDataFrameTransformer
     dataModel = DfModel
 
@@ -18,18 +20,35 @@ class FantasyHockeyController:
         for key in kwargs.keys():
             self.key = key
             self.value = kwargs[key]
-        
-        self.dataPath = os.getcwd() + "/data/" + self.season + "/"
-        self.resultsPath = os.getcwd() + "/results/" + self.season + "/"
 
         self.map = self.getMap(self.dataSource)
+        self.seasons = self.getSeasons()
 
-    def getData(self, dataType):
+    def getSeasons(self):
+        seasons = []
+        if self.season:
+            targetSeason = self.season
+            yearsOfCoverage = self.numOfSeasons
+
+            firstTargetYear = targetSeason[:4]
+            secondTargetYear = targetSeason[4:]
+
+            for i in reversed(range(yearsOfCoverage)):
+                firstYear = int(firstTargetYear) - i
+                secondYear = int(secondTargetYear) - i
+                coveredSeason = str(firstYear) + str(secondYear)
+                season = Season(coveredSeason)
+                seasons.append(season)
+        return seasons
+
+
+    def getData(self, dataType, season):
+        folderPath = season.dataPath + dataType
         dataList = []
-        rawDataFiles = os.listdir(self.dataPath + dataType)
+        rawDataFiles = os.listdir(folderPath)
 
         for fileName in rawDataFiles:
-            filePath = self.dataPath + dataType + "/" + fileName
+            filePath = folderPath + "/" + fileName
             data = self.dataModel(filePath, self.sheetName)
 
             dataList.append(data)
@@ -48,31 +67,14 @@ class FantasyHockeyController:
     def cleanData(self, dataModel):
         return dataModel
 
-    def validateProcess(self):
-        
-        # Required params are set
-        if not self.season or len(self.season) != 8:
-            return [False, "No Season Specified."]
-
-        # Required data is present
-        playerFiles = os.listdir(self.dataPath + "players/")
-        if len(playerFiles) < 1:
-            return [False, "No Player Data Available."]
-
-        goalieFiles = os.listdir(self.dataPath + "goalies/")
-        if len(goalieFiles) < 1:
-            return [False, "No Goalie Data Available."]
-
-        return [True, ""]
-
     def transformToCsv(self, dataModel):
         return dataModel.transformToCsv()
 
-    def saveCsv(self, csvFile, dataType):
-        path = self.resultsPath
+    def saveCsv(self, csvFile, name, season):
+        path = season.resultsPath
         if not os.path.isdir(path):
             os.mkdir(path)
-        fileName = dataType + self.season + ".csv"
+        fileName = name + self.season + ".csv"
         f = open(path + fileName, "w")
         f.write(csvFile)
         f.close()
@@ -83,18 +85,22 @@ class FantasyHockeyController:
         return transformedData
 
     def buildCsv(self):
+        seasons = self.seasons
+        for i in range(len(seasons)):
+            season = seasons[i]
 
-        isValid = self.validateProcess()
-        if not isValid[0]:
-            return
-        else:
-            for dataType in self.dataTypes:
-                dataList = self.getData(dataType)
-                data = self.consolidateData(dataList)
-                data = self.cleanData(data)
-                data = self.transformData(data, dataType)
-                csv = self.transformToCsv(data)
-                self.saveCsv(csv, dataType)
+            if not season.isValid():
+                print(season.error)
+                return season.error
+            else:
+                for dataType in self.dataTypes:
+                    dataList = self.getData(dataType, season)
+                    data = self.consolidateData(dataList)
+                    data = self.cleanData(data)
+                    data = self.transformData(data, dataType)
+                    season.setData(dataType, data)
+                    csv = self.transformToCsv(data)
+                    self.saveCsv(csv, dataType, season)
 
     def getMap(self, dataSource):
         if dataSource == "QuantHockey":
