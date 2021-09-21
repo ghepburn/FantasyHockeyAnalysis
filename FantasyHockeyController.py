@@ -6,6 +6,7 @@ from transformers.BasicDataFrameTransformer import BasicDataFrameTransformer
 from models.DfModel import DfModel
 from maps.QuantHockeyMap import QuantHockeyMap
 from models.Season import Season
+from models.Map import Map
 
 class FantasyHockeyController:
     season = str(dt.datetime.now().year - 1) + str(dt.datetime.now().year)
@@ -21,7 +22,7 @@ class FantasyHockeyController:
             self.key = key
             self.value = kwargs[key]
 
-        self.map = self.getMap(self.dataSource)
+        self.map = Map(self.getMap(self.dataSource))
         self.seasons = self.getSeasons()
 
     def getSeasons(self):
@@ -49,7 +50,7 @@ class FantasyHockeyController:
 
         for fileName in rawDataFiles:
             filePath = folderPath + "/" + fileName
-            data = self.dataModel(filePath, self.sheetName)
+            data = self.dataModel(filePath, self.sheetName, self.map.getHeaderRow(dataType), self.map.getIndexColumn(dataType))
 
             dataList.append(data)
 
@@ -65,6 +66,13 @@ class FantasyHockeyController:
         return consolidatedData
 
     def cleanData(self, dataModel):
+
+        # columns = dataModel.getColumns()
+        # if columns[0] not in self.map["columns"].keys():
+        #     dataModel.setColumnNames(dataModel.getRow(0))
+        #     dataModel.dropRow(0)
+
+
         return dataModel
 
     def transformToCsv(self, dataModel):
