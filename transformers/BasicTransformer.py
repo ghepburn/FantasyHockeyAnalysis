@@ -5,13 +5,24 @@ class BasicTransformer:
         self.transformerType = dataType
         self.map = map
 
+        self.sortBy = "FantasyPointsPerGp"
+
     def transform(self, data):
+        print("RENAME")
         data = self.renameColumns(data)
+        print(data.data.tail())
+        print("REMOVE")
         data = self.removeColumns(data)
+        print(data.data.tail())
+        print("REARRANGE")
         data = self.rearrangeColumns(data)
-        data = self.add3YearAverages(data)
-        data = self.addFantasyWeightings(data)
+        print(data.data.tail())
+        print("ADD WEIGHTS")
+        data = self.addFantasyWeights(data)
+        print(data.data.tail())
         data = self.sort(data)
+        print("SORTED")
+        print(data.data.tail())
         return data
 
     def removeColumns(self, data):
@@ -59,17 +70,16 @@ class BasicTransformer:
 
         return data
 
-    def add3YearAverages(self, data):
-        return data
-
-    def addFantasyWeightings(self, data):
+    def addFantasyWeights(self, data):
         fantasyWeights = []
+        fantasyWeightsPerGp = []
 
         numOfRows = data.getNumOfRows()
         columns = self.map.getNewColumnNames(self.transformerType)
-        
+
         for i in range(numOfRows):
             row = data.getRow(i)
+
             rowFantasyPoints = 0
             for col in columns: 
                 colWeight = self.map.getColumnWeight(self.transformerType, col)
@@ -77,13 +87,19 @@ class BasicTransformer:
                     colData = row[col]
                     itemFantasyWeight = colWeight * colData
                     rowFantasyPoints += itemFantasyWeight
+
             fantasyWeights.append(rowFantasyPoints)
 
-        data.addColumn("FantasyPoints", fantasyWeights)        
+            gP = int(data.getItem(i, "GP"))
+            fantasyWeightsPerGp.append(rowFantasyPoints/gP)
+            gP = data.getColumn("GP")
+
+        data.addColumn("FantasyPoints", fantasyWeights) 
+        data.addColumn("FantasyPointsPerGp", fantasyWeightsPerGp)  
 
         return data
 
     def sort(self, data):
-        sortBy = "FantasyPoints"
-        data.sort(sortBy)
+        data.sort(self.sortBy)
         return data
+

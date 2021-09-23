@@ -59,6 +59,8 @@ class DfModel(DataModel):
         self.data[name] = colData
 
     def addColumn(self, colName, data):
+        if len(data) == 0:
+            data = [0 for i in range(self.getNumOfRows())]
         self.data[colName] = data
 
     def removeColumn(self, name):
@@ -116,3 +118,18 @@ class DfModel(DataModel):
 
     def sort(self, sortBy):
         self.data.sort_values(by=sortBy, inplace=True, ascending=False)
+
+    def getRowsFromQuery(self, query):
+        queryList = query.split("=")
+        category = queryList[0]
+        value = queryList[-1]
+
+        result = self.data.loc[self.data[category]==value]
+        return result
+
+    def removeRows(self, query):
+        rows = self.getRowsFromQuery(query)
+        indexes = list(rows.index)
+        for i in indexes:
+            self.dropRow(i)
+        

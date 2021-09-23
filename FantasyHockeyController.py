@@ -65,13 +65,11 @@ class FantasyHockeyController:
 
         return consolidatedData
 
-    def cleanData(self, dataModel):
+    def cleanData(self, dataModel, dataType):
 
-        # columns = dataModel.getColumns()
-        # if columns[0] not in self.map["columns"].keys():
-        #     dataModel.setColumnNames(dataModel.getRow(0))
-        #     dataModel.dropRow(0)
-
+        # Remove Goalies from players data
+        if dataType == "players":
+            dataModel.removeRows("Pos=G")
 
         return dataModel
 
@@ -93,9 +91,8 @@ class FantasyHockeyController:
         return transformedData
 
     def buildCsv(self):
-        seasons = self.seasons
-        for i in range(len(seasons)):
-            season = seasons[i]
+        for i in range(len(self.seasons)):
+            season = self.seasons[i]
 
             if not season.isValid():
                 print(season.error)
@@ -104,14 +101,20 @@ class FantasyHockeyController:
                 for dataType in self.dataTypes:
                     dataList = self.getData(dataType, season)
                     data = self.consolidateData(dataList)
-                    data = self.cleanData(data)
+                    data = self.cleanData(data, dataType)
                     data = self.transformData(data, dataType)
-                    season.setData(dataType, data)
                     csv = self.transformToCsv(data)
                     self.saveCsv(csv, dataType, season)
+
+        
 
     def getMap(self, dataSource):
         if dataSource == "QuantHockey":
             return QuantHockeyMap
         else:
             return {}
+
+    def addFantasyAverages(self, dataType, listOfDataModels):
+        transformer = self.transformer(dataType, self.map)
+        data = transformer.addAverages(listOfDataModels)
+        return data
